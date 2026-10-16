@@ -1,0 +1,21 @@
+# Data (too large / regenerable)
+data/raw/*
+data/interim/*
+data/processed/*
+!data/**/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Secrets (Census API key, GEE credentials)
+.env
+*.json.key
+
+# OS / editors
+.DS_Store
+.vscode/
+.idea/

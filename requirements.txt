@@ -1,0 +1,16 @@
+pandas
+numpy
+geopandas
+shapely
+pyarrow
+pyyaml
+requests
+earthengine-api
+scikit-learn
+lightgbm
+xgboost
+shap
+statsmodels
+matplotlib
+seaborn
+jupyter

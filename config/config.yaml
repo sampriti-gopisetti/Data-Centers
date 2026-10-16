@@ -1,0 +1,23 @@
+# Central settings — change here, not in code.
+paths:
+  raw: data/raw
+  interim: data/interim
+  processed: data/processed
+  figures: reports/figures
+
+tract_vintage: 2020          # all features harmonized to 2020 tract boundaries
+years:
+  min_construction: 2011     # earliest year with ACS 5-year "before" features
+  max_construction: 2025
+feature_lag_years: 1         # features measured at t - lag
+
+registry:
+  dedup_distance_m: 250      # records closer than this are candidate duplicates
+
+sampling:
+  controls_per_case: 5
+  stratum: state             # state | cbsa | distance
+
+cv:
+  scheme: region_holdout     # leave-one-census-region-out
+random_seed: 42
