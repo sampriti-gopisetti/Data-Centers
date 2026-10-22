@@ -9,6 +9,9 @@ tract_vintage: 2020          # all features harmonized to 2020 tract boundaries
 years:
   min_construction: 2011     # earliest year with ACS 5-year "before" features
   max_construction: 2025
+  nlcd_min_year: 1985        # NLCD Annual Land Cover coverage start; wider than
+                              # min_construction so we can estimate a year for
+                              # sites built before 2011 too, not just flag them
 feature_lag_years: 1         # features measured at t - lag
 
 registry:

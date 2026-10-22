@@ -1,7 +1,7 @@
 .PHONY: setup ingest registry features sample models analysis all
 
 setup:
-	python -m venv .venv && .venv/bin/pip install -r requirements.txt
+	python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 
 ingest:    ; python -m src.ingest.run
 registry:  ; python -m src.registry.run
