@@ -34,6 +34,7 @@ from __future__ import annotations
 import os
 import re
 import time
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -168,6 +169,7 @@ def _build_registry(pnnl: pd.DataFrame, compute: pd.DataFrame, max_distance_m: f
             )
         elif len(strong) > 1:
             ci, dist, score = strong[0]
+            matched_compute_ids.add(ci)  # claimed by this pending review, not a standalone site
             rows.append(
                 _registry_row(
                     prow, compute.loc[ci], "manual_review", "multiple_plausible_nearby", dist, score
@@ -175,6 +177,7 @@ def _build_registry(pnnl: pd.DataFrame, compute: pd.DataFrame, max_distance_m: f
             )
         else:
             ci, dist, score = candidates[0]
+            matched_compute_ids.add(ci)  # claimed by this pending review, not a standalone site
             rows.append(
                 _registry_row(
                     prow, compute.loc[ci], "manual_review", "weak_or_distant_match", dist, score
@@ -185,6 +188,68 @@ def _build_registry(pnnl: pd.DataFrame, compute: pd.DataFrame, max_distance_m: f
         if ci not in matched_compute_ids:
             rows.append(_registry_row(None, crow, "compute_only_no_pnnl_candidate", None))
 
+    return pd.DataFrame(rows)
+
+
+def _apply_review_decisions(registry: pd.DataFrame, compute: pd.DataFrame, decisions_path: Path) -> pd.DataFrame:
+    """Apply a completed match_review_queue review: 'confirm' rows become a
+    high_confidence_match; 'reject' rows are split back into two
+    independent sites (the proposed merge was wrong). Rows not mentioned in
+    the decisions file pass through unchanged, so any still-unreviewed
+    manual_review rows keep showing up in match_review_queue.csv."""
+    if not decisions_path.exists():
+        print(f"  No review decisions file at {decisions_path} -- all manual_review rows pass through as-is.")
+        return registry
+
+    decisions = (
+        pd.read_csv(decisions_path, dtype={"site_id": str})
+        .set_index("site_id")["reviewer_decision"]
+        .str.strip()
+        .str.lower()
+    )
+    compute_by_id = compute.set_index("compute_atlas_id", drop=False)
+
+    # A compute_atlas_id can be the top candidate for more than one PNNL site
+    # (e.g. two PNNL buildings on a campus Compute Atlas only tracks once).
+    # If one of those PNNL sites ends up confirmed/high_confidence against
+    # it, a sibling that gets rejected must NOT re-add that same compute
+    # record as a standalone site -- it's already claimed.
+    claimed_compute_ids = set(
+        registry.loc[registry["match_status"] == "high_confidence_match", "compute_atlas_id"].dropna()
+    ) | set(
+        registry.loc[registry["site_id"].isin(decisions[decisions == "confirm"].index), "compute_atlas_id"].dropna()
+    )
+
+    rows = []
+    confirmed = rejected = 0
+    for _, row in registry.iterrows():
+        decision = decisions.get(row["site_id"])
+
+        if decision == "confirm":
+            row = row.copy()
+            row["match_status"] = "high_confidence_match"
+            row["review_required"] = False
+            row["review_reason"] = "manually_confirmed"
+            rows.append(row.to_dict())
+            confirmed += 1
+        elif decision == "reject":
+            pnnl_row = row[
+                ["pnnl_id", "name", "operator", "state", "county", "latitude", "longitude",
+                 "pnnl_record_count", "pnnl_geometry_types"]
+            ]
+            rows.append(_registry_row(pnnl_row, None, "unmatched", "manually_rejected"))
+            if row["compute_atlas_id"] not in claimed_compute_ids:
+                rows.append(
+                    _registry_row(
+                        None, compute_by_id.loc[row["compute_atlas_id"]],
+                        "compute_only_no_pnnl_candidate", "manually_rejected",
+                    )
+                )
+            rejected += 1
+        else:
+            rows.append(row.to_dict())
+
+    print(f"  Applied review decisions: {confirmed} confirmed, {rejected} rejected (split into {rejected * 2} sites)")
     return pd.DataFrame(rows)
 
 
@@ -375,6 +440,10 @@ def main() -> None:
 
     max_distance_m = cfg["registry"]["dedup_distance_m"]
     registry = _build_registry(pnnl, compute, max_distance_m)
+
+    print("Applying manual match-review decisions (if any)...")
+    decisions_path = ROOT / "data" / "manual" / "registry_review_decisions.csv"
+    registry = _apply_review_decisions(registry, compute, decisions_path)
 
     registry = _join_census_tracts(registry, interim_dir / "census_tracts.parquet")
     unmatched_tracts = registry["tract_geoid"].isna().sum()
