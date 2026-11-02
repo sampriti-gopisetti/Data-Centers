@@ -16,8 +16,9 @@ dataset") of the proposal, for two purposes:
 Case features come from data/processed/dc_census/dc_tract_acs_long.csv (every
 ACS year, every data-center tract -- built by a teammate from the Step 1
 registry). Control candidates come from
-data/processed/acs_ruca_all_tracts_2010_2024.csv.gz (every US tract, every
-year, with a has_data_center flag -- also a teammate's output), filtered down
+data/processed/reference/acs_ruca_all_tracts_2010_2024.csv.gz (every US
+tract, every year, with a has_data_center flag -- also a teammate's output),
+filtered down
 to tracts that never have a data center (the flag never flips back to False,
 so "False in any one year" implies "False in every year"). Matching is
 stratified on state + RUCA class, ranked by closest population density,
@@ -33,6 +34,7 @@ from src.utils import ROOT, load_config
 
 DC_CENSUS_DIR = ROOT / "data" / "processed" / "dc_census"
 PROCESSED_DIR = ROOT / "data" / "processed"
+REFERENCE_DIR = PROCESSED_DIR / "reference"
 SAMPLING_DIR = PROCESSED_DIR / "sampling"
 
 CASE_FEATURE_COLS = [
@@ -59,7 +61,7 @@ def _tract_str(series: pd.Series) -> pd.Series:
 def _build_state_lookup() -> pd.Series:
     """tract_id (11-digit str) -> state abbreviation, from EJScreen's full tract universe."""
     ej = pd.read_csv(
-        PROCESSED_DIR / "ejscreen_tract_clean_50states_dc.csv",
+        REFERENCE_DIR / "ejscreen_tract_clean_50states_dc.csv",
         dtype={"GEOID": str},
         usecols=["GEOID", "state_abbr"],
     )
@@ -69,7 +71,7 @@ def _build_state_lookup() -> pd.Series:
 
 def _load_control_pool(state_lookup: pd.Series) -> pd.DataFrame:
     pool = pd.read_csv(
-        PROCESSED_DIR / "acs_ruca_all_tracts_2010_2024.csv.gz",
+        REFERENCE_DIR / "acs_ruca_all_tracts_2010_2024.csv.gz",
         dtype={"tract_id": str},
     )
     pool["tract_id"] = _tract_str(pool["tract_id"])
