@@ -1,0 +1,95 @@
+state,epoch,rq1_sites_needing_it,rq2_operational_sites,reason,state_fips
+AR,2008,1,0,RQ1 pre-construction,05
+GA,2008,1,0,RQ1 pre-construction,13
+IA,2008,1,0,RQ1 pre-construction,19
+ID,2008,1,0,RQ1 pre-construction,16
+MT,2008,1,0,RQ1 pre-construction,30
+OH,2008,1,0,RQ1 pre-construction,39
+OK,2008,1,0,RQ1 pre-construction,40
+SD,2008,1,0,RQ1 pre-construction,46
+TX,2008,1,0,RQ1 pre-construction,48
+UT,2008,1,0,RQ1 pre-construction,49
+VA,2008,2,0,RQ1 pre-construction,51
+WY,2008,2,0,RQ1 pre-construction,56
+AZ,2011,1,0,RQ1 pre-construction,04
+CO,2011,3,0,RQ1 pre-construction,08
+IN,2011,1,0,RQ1 pre-construction,18
+MD,2011,1,0,RQ1 pre-construction,24
+NV,2011,1,0,RQ1 pre-construction,32
+NY,2011,1,0,RQ1 pre-construction,36
+OR,2011,2,0,RQ1 pre-construction,41
+SC,2011,1,0,RQ1 pre-construction,45
+VA,2011,1,0,RQ1 pre-construction,51
+WA,2011,2,0,RQ1 pre-construction,53
+FL,2013,1,0,RQ1 pre-construction,12
+IA,2013,1,0,RQ1 pre-construction,19
+NE,2013,2,0,RQ1 pre-construction,31
+NV,2013,4,0,RQ1 pre-construction,32
+NY,2013,1,0,RQ1 pre-construction,36
+OH,2013,4,0,RQ1 pre-construction,39
+OK,2013,1,0,RQ1 pre-construction,40
+OR,2013,3,0,RQ1 pre-construction,41
+SC,2013,1,0,RQ1 pre-construction,45
+TN,2013,2,0,RQ1 pre-construction,47
+TX,2013,4,0,RQ1 pre-construction,48
+UT,2013,1,0,RQ1 pre-construction,49
+VA,2013,5,0,RQ1 pre-construction,51
+WA,2013,1,0,RQ1 pre-construction,53
+WY,2013,1,0,RQ1 pre-construction,56
+GA,2016,1,0,RQ1 pre-construction,13
+NV,2016,2,0,RQ1 pre-construction,32
+OH,2016,1,0,RQ1 pre-construction,39
+OR,2016,2,0,RQ1 pre-construction,41
+TX,2016,3,0,RQ1 pre-construction,48
+VA,2016,9,0,RQ1 pre-construction,51
+WA,2016,2,0,RQ1 pre-construction,53
+AK,2019,0,6,RQ2 present-day,02
+AL,2019,0,10,RQ2 present-day,01
+AR,2019,0,6,RQ2 present-day,05
+AZ,2019,3,25,RQ1 pre-construction; RQ2 present-day,04
+CA,2019,0,78,RQ2 present-day,06
+CO,2019,0,29,RQ2 present-day,08
+CT,2019,0,6,RQ2 present-day,09
+DC,2019,0,9,RQ2 present-day,11
+DE,2019,0,8,RQ2 present-day,10
+FL,2019,0,48,RQ2 present-day,12
+GA,2019,2,19,RQ1 pre-construction; RQ2 present-day,13
+HI,2019,0,13,RQ2 present-day,15
+IA,2019,3,30,RQ1 pre-construction; RQ2 present-day,19
+ID,2019,0,10,RQ2 present-day,16
+IL,2019,1,42,RQ1 pre-construction; RQ2 present-day,17
+IN,2019,0,3,RQ2 present-day,18
+KS,2019,0,5,RQ2 present-day,20
+KY,2019,0,6,RQ2 present-day,21
+LA,2019,0,10,RQ2 present-day,22
+MA,2019,0,19,RQ2 present-day,25
+MD,2019,0,12,RQ2 present-day,24
+ME,2019,0,2,RQ2 present-day,23
+MI,2019,0,25,RQ2 present-day,26
+MN,2019,0,17,RQ2 present-day,27
+MO,2019,0,10,RQ2 present-day,29
+MS,2019,0,5,RQ2 present-day,28
+MT,2019,0,9,RQ2 present-day,30
+NC,2019,0,27,RQ2 present-day,37
+ND,2019,0,1,RQ2 present-day,38
+NE,2019,2,15,RQ1 pre-construction; RQ2 present-day,31
+NH,2019,0,11,RQ2 present-day,33
+NJ,2019,0,40,RQ2 present-day,34
+NM,2019,0,7,RQ2 present-day,35
+NV,2019,5,37,RQ1 pre-construction; RQ2 present-day,32
+NY,2019,0,35,RQ2 present-day,36
+OH,2019,9,53,RQ1 pre-construction; RQ2 present-day,39
+OK,2019,0,30,RQ2 present-day,40
+OR,2019,7,33,RQ1 pre-construction; RQ2 present-day,41
+PA,2019,0,13,RQ2 present-day,42
+SC,2019,0,8,RQ2 present-day,45
+SD,2019,0,4,RQ2 present-day,46
+TN,2019,1,36,RQ1 pre-construction; RQ2 present-day,47
+TX,2019,1,36,RQ1 pre-construction; RQ2 present-day,48
+UT,2019,1,30,RQ1 pre-construction; RQ2 present-day,49
+VA,2019,4,54,RQ1 pre-construction; RQ2 present-day,51
+VT,2019,0,5,RQ2 present-day,50
+WA,2019,1,35,RQ1 pre-construction; RQ2 present-day,53
+WI,2019,0,20,RQ2 present-day,55
+WV,2019,0,11,RQ2 present-day,54
+WY,2019,0,8,RQ2 present-day,56
