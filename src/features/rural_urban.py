@@ -50,12 +50,16 @@ def ruca_class(p: float) -> str | float:
 
 def build_ruca_table(path: str) -> pd.DataFrame:
     df = _read_any(path)
-    tcol, pcol, scol = _tract_col(df), _ruca_col(df, "primary"), _ruca_col(df, "secondary")
-    out = pd.DataFrame({
-        "tract_id": df[tcol].astype(str).str.strip().str.replace(r"\.0$", "", regex=True).str.zfill(11),
+    pcol, scol = _ruca_col(df, "primary"), _ruca_col(df, "secondary")
+    # the 2025 USDA file carries TractFIPS20 and TractFIPS23 (they differ only in Connecticut, where ACS 2022+ uses the
+    # new planning-region tracts); key the table on every tract-ID column so both spellings join
+    id_cols = [c for c in df.columns if str(c).replace(" ", "").lower() in ("tractfips20", "tractfips23")] or [_tract_col(df)]
+    parts = [pd.DataFrame({
+        "tract_id": df[c].astype(str).str.strip().str.replace(r"\.0$", "", regex=True).str.zfill(11),
         "ruca_primary": pd.to_numeric(df[pcol], errors="coerce"),
-        "ruca_secondary": pd.to_numeric(df[scol], errors="coerce"),
-    })
+        "ruca_secondary": pd.to_numeric(df[scol], errors="coerce")}) for c in id_cols]
+    out = pd.concat(parts, ignore_index=True)
+    out = out[out["tract_id"].str.fullmatch(r"\d{11}")]
     out["ruca_uncoded"] = out["ruca_primary"].eq(99) | out["ruca_primary"].isna()  # water-only/zero-pop
     out.loc[out["ruca_uncoded"], ["ruca_primary", "ruca_secondary"]] = np.nan
     out["ruca_class"] = out["ruca_primary"].map(ruca_class)

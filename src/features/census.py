@@ -1,6 +1,7 @@
 """ACS 5-year tract features, harmonized to 2020 tract boundaries.
 
-Output: one row per (tract_id_2020, acs_year) with raw counts and derived rates.
+Output: one row per (tract_id, acs_year) with raw counts and derived rates.
+tract_id is always the 11-digit 2020 tract GEOID, stored as a string.
 """
 import time
 from pathlib import Path
@@ -15,7 +16,7 @@ STATES = ["01", "02", "04", "05", "06", "08", "09", "10", "11", "12", "13", "15"
           "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42",
           "44", "45", "46", "47", "48", "49", "50", "51", "53", "54", "55", "56"]
 
-VARS = {
+CORE_VARS = {
     "B01003_001E": "pop_total",
     "B19013_001E": "median_hh_income",    # median: needs weighted averaging in crosswalk
     "B25077_001E": "median_home_value",   # median: owner-occupied units
@@ -30,22 +31,40 @@ VARS = {
     "B11001_001E": "households",
     "B25003_002E": "owner_units",
 }
+# Optional: if the Census API rejects them for an early year, that year gets NaN for these.
+OPTIONAL_VARS = {
+    "B15003_001E": "edu_universe",   # population 25+
+    "B15003_022E": "_bach",          # bachelor's
+    "B15003_023E": "_mast",          # master's
+    "B15003_024E": "_prof",          # professional degree
+    "B15003_025E": "_doct",          # doctorate
+    "B23025_003E": "labor_force",    # civilian labor force
+    "B23025_005E": "unemployed",
+}
+VARS = {**CORE_VARS, **OPTIONAL_VARS}
 COUNT_COLS = ["pop_total", "pov_universe", "pov_below", "race_total", "nh_white",
-              "nh_black", "nh_aian", "nh_asian", "hispanic", "households", "owner_units"]
+              "nh_black", "nh_aian", "nh_asian", "hispanic", "households", "owner_units",
+              "edu_universe", "bach_plus", "labor_force", "unemployed"]
 MEDIAN_WEIGHTS = {"median_hh_income": "households", "median_home_value": "owner_units"}
 SENTINEL_MAX = -222222222  # Census uses -666666666, -999999999, etc. for "not available"
+CACHE_VERSION = "v2"       # bump if the variable list changes, so stale caches are ignored
 
 
-def fetch_state(year: int, state: str, key: str, retries: int = 3) -> pd.DataFrame:
+def fetch_state(year: int, state: str, key: str, variables: list, retries: int = 3) -> pd.DataFrame:
     url = f"https://api.census.gov/data/{year}/acs/acs5"
-    params = {"get": ",".join(VARS), "for": "tract:*", "in": f"state:{state} county:*", "key": key}
+    params = {"get": ",".join(variables), "for": "tract:*", "in": f"state:{state} county:*", "key": key}
     for attempt in range(retries):
         r = requests.get(url, params=params, timeout=60)
         if r.status_code == 200:
-            rows = r.json()
+            try:
+                rows = r.json()
+            except ValueError:
+                raise RuntimeError(f"ACS {year} state {state}: non-JSON reply (bad API key?): {r.text[:200]}")
             return pd.DataFrame(rows[1:], columns=rows[0])
         if r.status_code == 204:
             return pd.DataFrame()
+        if r.status_code == 400:
+            raise ValueError(f"ACS {year}: variable not available ({r.text[:150]})")
         time.sleep(2 * (attempt + 1))
     raise RuntimeError(f"ACS {year} state {state}: HTTP {r.status_code} {r.text[:200]}")
 
@@ -54,19 +73,31 @@ def clean_raw(df: pd.DataFrame) -> pd.DataFrame:
     """Rename, make numeric, null out Census sentinel codes, build 11-digit tract id."""
     out = pd.DataFrame({"tract_id": df["state"] + df["county"] + df["tract"]})
     for code, name in VARS.items():
-        s = pd.to_numeric(df[code], errors="coerce")
-        out[name] = s.mask(s <= SENTINEL_MAX)
-    return out
+        if code in df.columns:
+            s = pd.to_numeric(df[code], errors="coerce")
+            out[name] = s.mask(s <= SENTINEL_MAX)
+        else:
+            out[name] = np.nan
+    out["bach_plus"] = out[["_bach", "_mast", "_prof", "_doct"]].sum(axis=1, min_count=4)
+    return out.drop(columns=["_bach", "_mast", "_prof", "_doct"])
 
 
 def pull_year(year: int, key: str, cache_dir: Path) -> pd.DataFrame:
     cache_dir.mkdir(parents=True, exist_ok=True)
-    f = cache_dir / f"acs5_tract_{year}.csv"
+    f = cache_dir / f"acs5_tract_{year}_{CACHE_VERSION}.csv"
     if f.exists():
         return pd.read_csv(f, dtype={"tract_id": str})
-    frames = [fetch_state(year, s, key) for s in STATES]
+    variables = list(VARS)
+    try:
+        first = fetch_state(year, STATES[0], key, variables)
+    except ValueError as e:
+        print(f"[ACS {year}] optional variables unavailable, using core only ({e})")
+        variables = list(CORE_VARS)
+        first = fetch_state(year, STATES[0], key, variables)  # raises if core vars fail too
+    frames = [first] + [fetch_state(year, s, key, variables) for s in STATES[1:]]
     out = clean_raw(pd.concat([x for x in frames if len(x)], ignore_index=True))
     out.to_csv(f, index=False)
+    print(f"[ACS {year}] pulled {len(out)} tracts")
     return out
 
 
@@ -100,6 +131,8 @@ def to_2020_tracts(df10: pd.DataFrame, xw: pd.DataFrame) -> pd.DataFrame:
 
 
 def add_derived(df: pd.DataFrame, land_km2: pd.Series) -> pd.DataFrame:
+    """Derived rates, density, and within-year percentile ranks (so income and home value are
+    comparable across years without needing a CPI adjustment)."""
     d = df.copy()
     safe = lambda n, den: (d[n] / d[den]).where(d[den] > 0)
     d["pct_nh_white"] = safe("nh_white", "race_total")
@@ -109,8 +142,12 @@ def add_derived(df: pd.DataFrame, land_km2: pd.Series) -> pd.DataFrame:
     d["pct_nh_asian"] = safe("nh_asian", "race_total")
     d["pct_hispanic"] = safe("hispanic", "race_total")
     d["poverty_rate"] = safe("pov_below", "pov_universe")
+    d["pct_bachelors_plus"] = safe("bach_plus", "edu_universe")
+    d["unemployment_rate"] = safe("unemployed", "labor_force")
     d["land_km2"] = d["tract_id"].map(land_km2)
     d["pop_density_km2"] = (d["pop_total"] / d["land_km2"]).where(d["land_km2"] > 0)
+    d["income_pctile_year"] = d["median_hh_income"].rank(pct=True)
+    d["home_value_pctile_year"] = d["median_home_value"].rank(pct=True)
     d["low_pop_flag"] = d["pop_total"].fillna(0) < 50  # ratios unreliable / undefined here
     return d
 
