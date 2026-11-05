@@ -462,15 +462,17 @@ def main() -> None:
     print(f"  {len(epoch_matches)} / {len(epoch)} Epoch AI sites matched to a registry site")
     print(registry["construction_year_source"].value_counts().to_string())
 
-    registry_parquet = processed_dir / "dc_registry.parquet"
-    registry_csv = processed_dir / "dc_registry.csv"
+    registry_dir = processed_dir / "registry"
+    registry_dir.mkdir(parents=True, exist_ok=True)
+    registry_parquet = registry_dir / "dc_registry.parquet"
+    registry_csv = registry_dir / "dc_registry.csv"
     registry.to_parquet(registry_parquet, index=False)
     registry.to_csv(registry_csv, index=False)
 
     review_queue = registry[registry["review_required"]].sort_values(
         ["match_status", "match_distance_m"]
     )
-    review_csv = processed_dir / "match_review_queue.csv"
+    review_csv = registry_dir / "match_review_queue.csv"
     review_queue.to_csv(review_csv, index=False)
 
     print(f"{len(registry)} sites -> {registry_csv}")
