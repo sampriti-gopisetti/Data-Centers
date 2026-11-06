@@ -44,3 +44,11 @@ Run a stage: `make registry`, or everything: `make all`.
 
 PNNL IM3 Data Center Atlas · Compute Atlas · Epoch AI · Annual NLCD (via Google Earth Engine) ·
 Census ACS / Decennial · USDA RUCA · EJScreen (archived) · NOAA NCEI · Census TIGER · EIA
+
+### Troubleshooting local setup
+- Use the project's virtual environment so `python` and `pip` always match:
+  source .venv/bin/activate
+  python -m pip install -r requirements.txt
+- In VS Code: Cmd/Ctrl+Shift+P > "Python: Select Interpreter" > pick `.venv`.
+- A `ModuleNotFoundError` usually means you're outside the venv, or `pip` and
+  `python3` point to different installs. Install with `python -m pip`.
